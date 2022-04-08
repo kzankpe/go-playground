@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -88,8 +88,8 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 func main() {
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", HomeLink)
-	router.HandleFunc("/users/{id}", getOneUser).Methods("GET")
-	router.HandleFunc("/users", getAllUsers).Methods("GET")
-	router.HandleFunc("/users/{id}", updateUser).Methods("PATCH")
+	router.HandleFunc("/users/{id}", getOneUser).Methods(http.MethodGet)
+	router.HandleFunc("/users", getAllUsers).Methods(http.MethodGet)
+	router.HandleFunc("/users/{id}", updateUser).Methods(http.MethodPatch)
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
