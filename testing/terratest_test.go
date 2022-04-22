@@ -17,11 +17,13 @@ import (
 
 func TestTerraformRemoteBackendStorage(t *testing.T) {
 
+	//Test Storage account used for the backend exists on Azure
+
 	rex := regexp.MustCompile(`(\w+)=\"(.+?)"`) // Regex to get key=value from the file
 	file, errmsg := ioutil.ReadFile("../backend.tfvars")
 	require.NoError(t, errmsg)
 
-	subscriptionID := os.Getenv("ARM_SUBSCRIPTION_ID")
+	subscriptionID := os.Getenv("ARM_SUBSCRIPTION_ID") // Get SubscriptionId from the env variables. (Using SPN for deployment)
 
 	// Data transformation
 	data := rex.FindAllStringSubmatch(string(file), -1)
@@ -46,6 +48,8 @@ func TestTerraformRemoteBackendStorage(t *testing.T) {
 }
 
 func TestTerraformRemoteBackendContainer(t *testing.T) {
+
+	//Test the container in Storage account used for the backend exists on Azure
 
 	rex := regexp.MustCompile(`(\w+)=\"(.+?)"`) // Regex to get key=value from the file
 	file, errmsg := ioutil.ReadFile("../backend.tfvars")
@@ -77,7 +81,7 @@ func TestTerraformRemoteBackendContainer(t *testing.T) {
 
 func TestTerraformIninitPlan(t *testing.T) {
 
-	testFolder, err := files.CopyTerraformFolderToTemp("../", t.Name())
+	testFolder, err := files.CopyTerraformFolderToTemp("../", t.Name()) // For the plan output file.
 	require.NoError(t, err)
 
 	defer os.RemoveAll(testFolder)
@@ -86,15 +90,9 @@ func TestTerraformIninitPlan(t *testing.T) {
 	file, errmsg := ioutil.ReadFile("../backend.tfvars")
 	require.NoError(t, errmsg)
 
-	terraformFile, errmsg := ioutil.ReadFile("../terraform.tfvars")
-	require.NoError(t, errmsg)
-
 	// Data transformation
 	data := rex.FindAllStringSubmatch(string(file), -1)
 	backendRaw := make(map[string]string) // Create an empty map for the value
-
-	tfdata := rex.FindAllStringSubmatch(string(terraformFile), -1)
-	tfRaw := make(map[string]string)
 
 	// Adding the content file content respecting the regex to the map
 	for _, keyval := range data {
@@ -108,24 +106,13 @@ func TestTerraformIninitPlan(t *testing.T) {
 		backend[i] = y
 	}
 
-	for _, val := range tfdata {
-		k := val[1]
-		v := val[2]
-		tfRaw[k] = v
-	}
-
-	terraformvars := make(map[string]interface{}, len(tfRaw))
-	for i, y := range tfRaw {
-		terraformvars[i] = y
-	}
-
 	PlanFile := filepath.Join(testFolder, "plan.out")
 	TerraformDir := "../"
 
 	terraformOption := &terraform.Options{
 		TerraformDir:  TerraformDir,
 		BackendConfig: backend,
-		Vars:          terraformvars,
+		VarFiles:      []string{"terraform.tfvars"}, // The terraform.tfvars file path is relative to the Terraform directory.
 		PlanFilePath:  PlanFile,
 	}
 
@@ -140,5 +127,5 @@ func TestTerraformIninitPlan(t *testing.T) {
 	}
 
 	planJSON := terraform.Show(t, showOptions)
-	require.Contains(t, planJSON, "module.cce2_cluster.flexibleengine_cce_cluster_v3.cce_cluster") // Confitm the resource is present in the plan result
+	require.Contains(t, planJSON, "azurerm_resource_group.this") // Confitm the resource is present in the plan result
 }
