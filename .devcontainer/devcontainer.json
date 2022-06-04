@@ -25,6 +25,7 @@
 		"golang.Go",
 		"mhutchie.git-graph",
 		"mutantdino.resourcemonitor"
+		
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
